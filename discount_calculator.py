@@ -64,6 +64,11 @@ class DiscountCalculator:
         if not isinstance(final_price, (int, float)) or final_price < 0:
             raise ValueError("Final price is not a non-negative number")
 
+        if price % discount_amount != 0 or price % discount_percentage != 0:
+            raise ValueError("Price is not a multiple of the discount amount or percentage")
+        if final_price % price != 0:
+            raise ValueError("Final price is not a multiple of the price")
+
         return round(final_price)
 
 # Example usage:
