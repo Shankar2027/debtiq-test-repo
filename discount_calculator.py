@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 from typing import Dict
 
@@ -10,12 +11,22 @@ class CustomerType(Enum):
 class StoreItem:
     """Class representing a store item"""
     def __init__(self, name: str, price: float, in_stock: bool):
+        if not isinstance(price, (int, float)) or price <= 0:
+            raise ValueError("Price must be a positive number")
+        if not isinstance(in_stock, bool):
+            raise ValueError("In stock must be a boolean value")
         self.name = name
         self.price = price
         self.in_stock = in_stock
 
 class DiscountCalculator:
     """Class for calculating discounts"""
+    DISCOUNT_PERCENTAGES = {
+        CustomerType.VIP: 0.20,
+        CustomerType.REGULAR: 0.05,
+        CustomerType.EMPLOYEE: 0.50
+    }
+
     def __init__(self):
         self.STORE_ITEMS = [
             StoreItem("Laptop", 1200, True),
@@ -25,21 +36,18 @@ class DiscountCalculator:
 
     def calculate_discount(self, price: float, customer_type: CustomerType) -> int:
         """Calculate the discount based on the customer type"""
-        if customer_type == CustomerType.VIP:
-            discount_percentage = 0.20
-        elif customer_type == CustomerType.REGULAR:
-            discount_percentage = 0.05
-        elif customer_type == CustomerType.EMPLOYEE:
-            discount_percentage = 0.50
-        else:
-            raise ValueError("Invalid customer type")
+        if customer_type not in self.DISCOUNT_PERCENTAGES:
+            raise ValueError(f"Invalid customer type: {customer_type}")
 
+        if price <= 0:
+            raise ValueError("Price must be a positive number")
+
+        discount_percentage = self.DISCOUNT_PERCENTAGES[customer_type]
         discount_amount = price * discount_percentage
         final_price = price - discount_amount
 
-        # Check if the result of math.ceil is an integer
-        if not isinstance(math.ceil(final_price), int):
-            raise ValueError("Final price is not an integer")
+        if not isinstance(final_price, (int, float)) or final_price < 0:
+            raise ValueError("Final price is not a non-negative number")
 
         return math.ceil(final_price)
 
