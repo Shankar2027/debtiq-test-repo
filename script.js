@@ -46,15 +46,17 @@ const contactFormSubmit = () => {
 };
 
 // Reveal sections on scroll (animation)
+const REVEAL_TRIGGER_BOTTOM = 0.85;
 const revealOnScroll = () => {
-    const triggerBottom = window.innerHeight * 0.85;
+    const triggerBottom = window.innerHeight * REVEAL_TRIGGER_BOTTOM;
     const revealElements = document.querySelectorAll('.reveal');
     revealElements.forEach(el => {
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
                 el.classList.add('reveal');
             }
-        }, { threshold: 0.85 });
+        }, { threshold: REVEAL_TRIGGER_BOTTOM });
+        observers.set(el, observer);
         observer.observe(el);
     });
 };
@@ -67,43 +69,53 @@ const dynamicBackgroundPalette = [
 ];
 
 const dynamicBackground = () => {
-    if (!dynamicBackgroundPalette || dynamicBackgroundPalette.length === 0) {
-        return;
+    try {
+        if (!dynamicBackgroundPalette || dynamicBackgroundPalette.length === 0) {
+            return;
+        }
+        const hour = new Date().getHours();
+        let colors;
+        if (hour >= 6 && hour < 12) {
+            colors = dynamicBackgroundPalette[0];
+        } else if (hour >= 12 && hour < 18) {
+            colors = dynamicBackgroundPalette[1];
+        } else {
+            colors = dynamicBackgroundPalette[2];
+        }
+        document.body.style.background = `linear-gradient(120deg, ${colors[0]} 0%, ${colors[1]} 100%)`;
+    } catch (error) {
+        console.error('Error in dynamicBackground:', error);
     }
-    const hour = new Date().getHours();
-    let colors;
-    if (hour >= 6 && hour < 12) {
-        colors = dynamicBackgroundPalette[0];
-    } else if (hour >= 12 && hour < 18) {
-        colors = dynamicBackgroundPalette[1];
-    } else {
-        colors = dynamicBackgroundPalette[2];
-    }
-    document.body.style.background = `linear-gradient(120deg, ${colors[0]} 0%, ${colors[1]} 100%)`;
 };
-
-// Named constant for reveal trigger bottom
-const REVEAL_TRIGGER_BOTTOM = 0.85;
 
 // Clean up IntersectionObserver when element is removed from DOM
 const observers = new WeakMap();
 const cleanupObservers = () => {
     revealElements.forEach(el => {
         const observer = observers.get(el);
-        observer.unobserve(el);
+        if (el.parentNode) {
+            observer.unobserve(el);
+        } else {
+            observer.disconnect();
+        }
     });
 };
 
 // Display alerts using a modal dialog
 const displayAlert = (message) => {
-    const modal = new Modal(document.getElementById('alertModal'));
-    modal.setContent(message);
-    modal.show();
+    try {
+        const modal = new Modal(document.getElementById('alertModal'));
+        modal.setContent(message);
+        modal.show();
+    } catch (error) {
+        console.error('Error in displayAlert:', error);
+    }
 };
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('.toggle-btn').addEventListener('click', toggleNav);
+    const toggleBtn = document.querySelector('.toggle-btn');
+    toggleBtn.addEventListener('click', toggleNav);
     window.addEventListener('scroll', () => {
         activeLinkHighlight();
         isScrollTopBtnVisible();
@@ -116,8 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
             revealOnScroll();
         }
     });
-    document.getElementById('scrollTopBtn').addEventListener('click', () => {
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    scrollTopBtn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
-    document.getElementById('contactForm').addEventListener('submit', contactFormSubmit);
+    const contactForm = document.getElementById('contactForm');
+    contactForm.addEventListener('submit', contactFormSubmit);
     window.addEventListener('load', dynamicBackground);
+});
+
+// Reveal sections on page load
+revealOnScroll();
