@@ -36,24 +36,9 @@ def format_user_greeting(user: Optional[UserProfileResponse]) -> str:
 
 class UserUpdate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="Unique username")
-    email: EmailDomainValidator = Field(..., description="Valid email address")
+    email: EmailStr = Field(..., description="Valid email address")
     password: PasswordSchema
     age: int = Field(..., gt=18, le=120, description="User must be an adult")
-    is_active: bool = Field(..., description="User status")
-
-    @validator('username')
-    def username_casefold(cls, v):
-        return v.casefold()
-
-    @validator('email')
-    def email_domain(cls, v):
-        return EmailDomainValidator()(v)
 
 class UserSchema(BaseModel):
     user: UserRegistration
-    error: Optional[MissingFieldError] = None
-
-    class Config:
-        error_msg_templates = {
-            "value_error.missing_field": "Missing required field: {loc[0]}"
-        }
