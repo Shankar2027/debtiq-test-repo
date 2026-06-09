@@ -27,34 +27,71 @@ json_schema = {
     "required": ["items"]
 }
 
-def process(data, tax_rates):
-    """Process the given JSON data and return the total value of active items."""
+def load_json_file(file_path):
+    """Load JSON data from a file."""
     try:
-        with open(data, 'r') as f:
-            loaded_data = json.load(f)
-        validate(instance=loaded_data, schema=json_schema)
-        total_value = 0
-        for item in loaded_data['items']:
-            if item['status'] == ACTIVE_STATUS:
-                total_value += item['val']
-        return total_value
+        with open(file_path, 'r') as f:
+            return json.load(f)
     except json.JSONDecodeError as e:
         # Handle JSON decoding errors specifically
         logging.error(f"Error decoding JSON: {e}")
-        return -1
+        return None
+    except Exception as e:
+        # Handle other exceptions
+        logging.error(f"Error loading JSON file: {e}")
+        return None
+
+def validate_json_data(data, schema):
+    """Validate the given JSON data against the provided schema."""
+    try:
+        validate(instance=data, schema=schema)
     except ValidationError as e:
         # Handle JSON validation errors specifically
         logging.error(f"Error validating JSON: {e}")
-        return -1
+        return False
+    return True
 
-def calc_tax(amt, tax_rates):
-    """Calculate the tax for the given amount based on the provided tax rates."""
+def process(data, tax_rates):
+    """Process the given JSON data and return the total value of active items."""
+    loaded_data = load_json_file(data)
+    if loaded_data is None:
+        return -1
+    
+    if not validate_json_data(loaded_data, json_schema):
+        return -1
+    
+    if 'items' not in loaded_data or not isinstance(loaded_data['items'], list):
+        logging.error("Invalid JSON data: 'items' key is missing or not an array")
+        return -1
+    
+    total_value = 0
+    for item in loaded_data['items']:
+        if 'status' not in item or 'val' not in item or not isinstance(item['status'], int) or not isinstance(item['val'], int):
+            logging.error("Invalid item in JSON data: missing or invalid 'status' or 'val' key")
+            continue
+        
+        if item['status'] == ACTIVE_STATUS:
+            total_value += item['val']
+    
+    return total_value
+
+def get_tax_rate(tax_rates):
+    """Get the tax rate from the provided tax rates."""
     try:
-        return amt * tax_rates['default']
+        return tax_rates['default']
     except KeyError as e:
         # Handle missing tax rate specifically
         logging.error(f"Error calculating tax: Missing tax rate '{e}'")
         return 0
+    
+def calc_tax(amt, tax_rates):
+    """Calculate the tax for the given amount based on the provided tax rates."""
+    tax_rate = get_tax_rate(tax_rates)
+    if not isinstance(tax_rate, int):
+        logging.error("Invalid tax rate: not an integer")
+        return 0
+    
+    return amt * tax_rate
 
 # Example usage:
 tax_rates = {
