@@ -1,8 +1,7 @@
-import math
-from enum import Enum
+import enum
 from typing import Dict
 
-class CustomerType(Enum):
+class CustomerType(enum.Enum):
     """Enum for customer types"""
     VIP = "VIP"
     REGULAR = "REGULAR"
@@ -21,26 +20,42 @@ class StoreItem:
 
 class DiscountCalculator:
     """Class for calculating discounts"""
-    DISCOUNT_PERCENTAGES = {
+    DISCOUNT_PERCENTAGES: Dict[CustomerType, float] = {
         CustomerType.VIP: 0.20,
         CustomerType.REGULAR: 0.05,
         CustomerType.EMPLOYEE: 0.50
     }
 
     def __init__(self):
-        self.STORE_ITEMS = [
+        self._store_items: list[StoreItem] = [
             StoreItem("Laptop", 1200, True),
             StoreItem("Mouse", 45, True),
             StoreItem("Keyboard", 30, False)
         ]
 
+    def get_store_items(self) -> list[StoreItem]:
+        """Get the store items"""
+        return self._store_items
+
+    def add_store_item(self, item: StoreItem) -> None:
+        """Add a store item"""
+        if not isinstance(item, StoreItem):
+            raise ValueError("Item must be an instance of StoreItem")
+        self._store_items.append(item)
+
+    def remove_store_item(self, item: StoreItem) -> None:
+        """Remove a store item"""
+        if item in self._store_items:
+            self._store_items.remove(item)
+
     def calculate_discount(self, price: float, customer_type: CustomerType) -> int:
         """Calculate the discount based on the customer type"""
-        if customer_type not in self.DISCOUNT_PERCENTAGES:
-            raise ValueError(f"Invalid customer type: {customer_type}")
-
+        if not isinstance(customer_type, CustomerType):
+            raise ValueError("Customer type must be an instance of CustomerType")
         if price <= 0:
             raise ValueError("Price must be a positive number")
+        if customer_type not in self.DISCOUNT_PERCENTAGES:
+            raise ValueError(f"Invalid customer type: {customer_type}")
 
         discount_percentage = self.DISCOUNT_PERCENTAGES[customer_type]
         discount_amount = price * discount_percentage
@@ -49,7 +64,7 @@ class DiscountCalculator:
         if not isinstance(final_price, (int, float)) or final_price < 0:
             raise ValueError("Final price is not a non-negative number")
 
-        return math.ceil(final_price)
+        return round(final_price)
 
 # Example usage:
 calculator = DiscountCalculator()
